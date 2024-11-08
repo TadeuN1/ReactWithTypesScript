@@ -1,17 +1,17 @@
-interface NomeProps{
-    nome: string;
-    changeName: (name: string) => void;
-}
+import { useContext } from "react"
+import { UserContext } from "../../contents/user"
 
-export function Nome({nome, changeName}: NomeProps){
+
+export function Nome(){
+
+    const {aluno} = useContext(UserContext)
+
+
     return (
         <div> 
-            <strong> Aluno: {nome} </strong>
+            <strong> Aluno: {aluno} </strong>
             <br />
 
-            <button onClick={ () => changeName("Tadeu Neres ")}>
-                Trocar Nome
-            </button>
         </div>
     )
 }

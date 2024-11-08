@@ -1,18 +1,21 @@
 import { useState } from "react"
+import UserProvider from "./contents/user"
 import { Alunos } from "./components/Alunos"
+import { Footer } from "./components/Footer"
 
 
 function App() {
-  const [ nome, setNome] = useState("Sujeito Programador")
-
   return(
+    <UserProvider>
     <div>
       <h1>Escola DEV</h1>
       <br />
       <hr />
 
-      <Alunos alunoNome={nome} changeName={ (name:string) => setNome(name) } />
+      <Alunos/>
+      <Footer />
     </div>
+    </UserProvider>
   )
 }
 
