@@ -31,7 +31,9 @@ export function Cart(){
                     onClick={() => removeItemCart(item)}
                     className="bg-slate-600 px-2 rounded text-white flex items-center justify-center"> 
                     - </button>
+
                     {item.amount}
+                    
                     <button
                     onClick={ () => addItemCart(item)} 
                     className="bg-slate-600 px-2 rounded text-white flex items-center justify-center"> 

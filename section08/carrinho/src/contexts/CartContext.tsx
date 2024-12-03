@@ -64,12 +64,14 @@ function CartProvider({children} : CartProviderProps){
         cartList[indexItem].total = cartList[indexItem].total - cartList[indexItem].price
         setCart(cartList);
         totalResultCart(cartList)
+        return;
     }
 
         const removeItem = cart.filter(item => item.id !== product.id)
 
         setCart(removeItem)
         totalResultCart(removeItem)
+        
     }
 
 
