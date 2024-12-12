@@ -1,6 +1,59 @@
 import { Container } from "../../components/container";
+import { useState, useEffect } from "react";
+import { collection, query, getDocs, orderBy } from "firebase/firestore";
+import { db } from "../../services/firebaseConnection";
+import { Link } from "react-router";
+
+interface CarsProps{
+    id: string;
+    name: string;
+    year: string;
+    uid: string;
+    price: string | number;
+    city: string;
+    km: string;
+    images: CarImageProps[]
+}
+
+interface CarImageProps{
+    name: string;
+    uid: string;
+    url: string
+}
 
 export function Home(){
+const [ cars, setCars ] = useState<CarsProps[]>([])
+
+useEffect(() => {
+
+function loadCars(){
+    const carsRef = collection(db, "Cars")
+    const queryRef = query(carsRef, orderBy("created", 'desc'))
+
+    getDocs(queryRef)
+    .then((snapshot) => {
+    let listcars = [] as CarsProps[];
+    
+    snapshot.forEach( doc => {
+        listcars.push({
+            id: doc.id,
+            name: doc.data().name,
+            year: doc.data().year,
+            km: doc.data().km,
+            city: doc.data().city,
+            price: doc.data().price,
+            images: doc.data().images,
+            uid: doc.data().uid
+        })
+    })
+
+    setCars(listcars)
+    })
+}
+
+loadCars()
+}, [])
+
     return(
         <Container>
             <section className="bg-white p-4 rounded-lg w-full max-w-3xl mx-auto flex justify-center items-center gap-2">
@@ -19,24 +72,28 @@ export function Home(){
             </h1>
 
             <main className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <section className="w-full bg-white rounded-lg">
-                    <img src="https://image.webmotors.com.br/_fotos/anunciousados/gigante/2024/202410/20241024/mercedesbenz-c-300-2-0-eq-boost-hibrido-amg-line-9gtronic-wmimagem15130206740.webp?s=fill&w=552&h=414&q=60"
+                { cars.map( car => (
+                    <Link key={car.id} to={`/car/${car.id}`}>
+                    <section className="w-full bg-white rounded-lg">
+                    <img src={car.images[0].url}
                      className="w-full rounded-lg mb-2 max-h-72 hover:scale-105 transition-all"
                      alt="Carro" />
 
-                     <p className="font-bold mt-1 mb-2 px-2">MERCEDES-BENZ C 300</p>
+                     <p className="font-bold mt-1 mb-2 px-2">{car.name}</p>
 
                      <div className="flex flex-col px-2">
-                        <span className="text-zinc-700 mb-6"> Ano 2023 | 0 KM </span>
-                        <strong className="text-black font-medium text-xl"> R$ 250.000 </strong>
+                        <span className="text-zinc-700 mb-6"> {car.year} | {car.km} </span>
+                        <strong className="text-black font-medium text-xl"> {car.price} </strong>
                      </div>
 
                      <div className="w-full h-px bg-slate-200 my-2"></div>
 
                      <div className="px-2 pb-2">
-                        <span className="text-black">Campo Grande </span>
+                        <span className="text-black">{car.city}</span>
                      </div>
                 </section>
+                    </Link>
+                ))}
             </main>
         </Container>
     )

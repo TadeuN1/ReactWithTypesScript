@@ -1,6 +1,6 @@
 import { DashboardHeader } from "../../../components/panelheader"
 import { Container } from "../../../components/container"
-import { FiUpload } from "react-icons/fi"
+import { FiTrash, FiUpload } from "react-icons/fi"
 import { useForm } from "react-hook-form"
 import { Input } from "../../../components/input"
 import { z } from "zod"
@@ -8,8 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ChangeEvent, useState, useContext } from "react"
 import { AuthContext } from "../../../context/AuthContext"
 import {v4 as uuidV4} from 'uuid'
-import { storage } from "../../../services/firebaseConnection"
-import { ref, getDownloadURL, deleteObject,uploadBytes } from "firebase/storage"
+import { storage, db } from "../../../services/firebaseConnection"
+import { ref, getDownloadURL, deleteObject, uploadBytes } from "firebase/storage"
+import { addDoc, collection } from "firebase/firestore"
 
 
 
@@ -27,6 +28,13 @@ const schema = z.object({
     description: z.string().nonempty("A descrição é obrigatório"),
 })
 
+interface ImageItemProps{
+    uid: string;
+    name: string;
+    previewUrl: string;
+    url: string;
+}
+
 type FormData = z.infer<typeof schema>
 
 export function New(){
@@ -36,6 +44,8 @@ export function New(){
         resolver: zodResolver(schema),
         mode: "onChange"
     })
+
+    const [carImages, setcarImages] = useState<ImageItemProps[]>([])
 
     async function handleFile(e: ChangeEvent<HTMLInputElement>){
         if(e.target.files && e.target.files[0]){
@@ -63,13 +73,70 @@ export function New(){
         uploadBytes(uploadRef, image)
         .then((snapshot) => {
             getDownloadURL(snapshot.ref).then((downloadUrl) => {
-                console.log("URL DE ACESSO", downloadUrl)
+                
+                const imageItem = {
+                    name: uidImage,
+                    uid: currentUid,
+                    previewUrl: URL.createObjectURL(image),
+                    url: downloadUrl,
+                }
+
+                setcarImages((images) => [...images, imageItem])
             })
         })
     }
 
     function onSubmit(data:FormData){
-        console.log(data)
+        if(carImages.length === 0){
+            alert("Envie uma imagem do veículo")
+            return;
+        }
+
+        const carListImages = carImages.map( car => {
+            return{
+                uid: car.uid,
+                name: car.name,
+                url: car.url
+            }
+        })
+
+        addDoc(collection(db, "Cars"), {
+            name: data.name,
+            model: data.model,
+            whatsapp: data.whatsapp,
+            city: data.city,
+            year: data.year,
+            km: data.km,
+            price: data.price,
+            description: data.description,
+            created: new Date(),
+            owner: user?.name,
+            uid: user?.uid,
+            images: carListImages
+        })
+        .then(() => {
+            reset();
+            setcarImages([]);
+            console.log("Cadastrado com sucesso!")
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+
+        
+    }
+
+    async function handleDeleteImage( item: ImageItemProps){
+        const imagePath = `images/${item.uid}/${item.name}`;
+
+        const imageRef = ref(storage, imagePath);
+
+        try{
+            await deleteObject(imageRef)
+            setcarImages(carImages.filter((car) => car.url !== item.url))
+        } catch(err){
+            alert("Erro ao deletar")
+        }
     }
 
     return(
@@ -90,6 +157,15 @@ export function New(){
                         />
                     </div>
                 </button>
+
+            {carImages.map( item => (
+                <div key={item.name} className="w-full h-32 items-center justify-center flex relative">
+                    <button className="absolute" onClick={() => handleDeleteImage(item)}>
+                        <FiTrash size={28} color="#FFF"/>    
+                     </button>
+                    <img src={item.previewUrl} className="w-full rounded-lg h-32 object-cover" alt="Imagem do veículo"/>
+                </div>
+            ))}
 
             </div>
 
